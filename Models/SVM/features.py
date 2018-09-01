@@ -61,3 +61,5 @@ class Embeddings(TransformerMixin):
             sent_embedding = [0] * l_vector
 
         return sent_embedding
+
+
