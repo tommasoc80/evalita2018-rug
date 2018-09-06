@@ -1,10 +1,9 @@
 '''
-SVM systems for germeval
+SVM systems for EVALITA 2018
 '''
 import argparse
 import re
 import statistics as stats
-import stop_words
 import json
 import pickle
 import gensim.models as gm
@@ -12,17 +11,20 @@ import gensim.models as gm
 import features
 from sklearn.base import TransformerMixin
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import KFold, cross_validate
+from sklearn.model_selection import KFold, cross_validate, cross_val_predict
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, SVC
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.utils import shuffle
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_recall_fscore_support
+from sklearn.model_selection import cross_val_score
 
 from nltk.corpus import stopwords
+
+from scipy.sparse import hstack, csr_matrix
 
 
 
@@ -106,7 +108,7 @@ def clean_samples(samples):
         string = re.sub(r"\)", " \) ", string)
         string = re.sub(r"\s{2,}", " ", string)
         string = re.sub(r"'", " ' ", string)
-        string = re.sub(r"[^A-Za-z0-9(),!?èéàòùì\'\`]", " ", string)
+        #string = re.sub(r"[^A-Za-z0-9(),!?èéàòùì\'\`]", " ", string) # potremmo commentarlo
         pattern = re.compile(r'\b(' + r'|'.join(stopwords.words('italian')) + r')\b\s*')
         string = pattern.sub('', string)
         string = string.strip().lower()
@@ -147,20 +149,20 @@ def evaluate(Ygold, Yguess):
 
 if __name__ == '__main__':
 
-    # TASK = 'binary'
-    TASK = 'multi'
+    TASK = 'binary'
+    #TASK = 'multi'
 
     '''
     Preparing data
     '''
 
-    FB_train = 'haspeede_FB-train.tsv'
-    TW_train = 'haspeede_TW-train.tsv'
-    espresso_train = 'espresso-ita-hate.p'
+    FB_train = '/home/p281734/projects/evalita2018-rug/Data/haspeede_FB-train.tsv'
+    TW_train = '/home/p281734/projects/evalita2018-rug/Data/haspeede_TW-train.tsv'
+    espresso_train = '/home/p281734/projects/evalita2018-rug/Data/espresso-ita-hate.p'
 
     evalita_test = 'TEST_DATA'
 
-    print('Reading in Germeval training data...')
+    print('Reading in EVALITA training data...')
     Xtrain,Ytrain = read_corpus(FB_train, TW_train, espresso_train)
 
     print('Reading in Test data...')
@@ -200,8 +202,9 @@ if __name__ == '__main__':
 
 
     # Getting embeddings
-    path_to_embs = '/media/flavio/1554-26B0/THESIS EXPERIMENTS/CNN/Embeddings/model_hate_300.bin'
+    #path_to_embs = '/media/flavio/1554-26B0/THESIS EXPERIMENTS/CNN/Embeddings/model_hate_300.bin'
     # path_to_embs = 'embeddings/model_reset_random.bin'
+    path_to_embs = '/project/tcaselli/Documents/evalita2018-rug/Data/embeddings/model_hate_300.bin'
     print('Getting pretrained word embeddings from {}...'.format(path_to_embs))
     embeddings, vocab = load_embeddings(path_to_embs)
     print('Done')
@@ -216,6 +219,13 @@ if __name__ == '__main__':
     classifier = Pipeline([
                      ('vectorize', vectorizer),
                      ('classify', clf)])
+
+
+    """
+    10-cv on training
+    """
+    #scores = cross_val_score(classifier, Xtrain, Ytrain, cv=10, scoring='f1_macro')
+    #print(scores)
 
 
     '''
@@ -234,20 +244,15 @@ if __name__ == '__main__':
 
     print('Outputting predictions...')
 
-    outdir = '/home/flavio/Experiments/EVALITA/'
-    fname = 'rug_fine_1.txt'
+    outdir = 'home/p281734/projects/evalita2018-rug/Results/'
+    fname = 'evalita_rug_1.txt'
 
     with open(outdir + '/' + fname, 'w', encoding='utf-8') as fo:
         assert len(Yguess) == len(Xtest_raw), 'Unequal length between samples and predictions!'
         for idx in range(len(Yguess)):
-            # print(Xtest_raw[idx] + '\t' + Yguess[idx] + '\t' + 'XXX', file=fo) # binary task (coarse)
-            print(Xtest_raw[idx] + '\t' + 'XXX' + '\t' + Yguess[idx], file=fo) # multi task (fine)
+            print(Xtest_raw[idx] + '\t' + Yguess[idx], file=fo) # binary task (coarse)
+           #print(Xtest_raw[idx] + '\t' + Yguess[idx] + '\t' + 'XXX', file=fo) # binary task (coarse)
+            #print(Xtest_raw[idx] + '\t' + 'XXX' + '\t' + Yguess[idx], file=fo) # multi task (fine)
 
     print('Done.')
 
-
-
-
-
-
-    #######
