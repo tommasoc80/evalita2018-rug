@@ -25,4 +25,4 @@ For the Ensamble models you shoudl follow this stesps:
 
 The ensemble model benefitrs from 2 extra features: lenght of the text and presence of offensive/hate words. The list of offensive/hate words is stored in the file *lexicon_deMauro.txt*. The file contains stemmed entries obtained from these two resources: *[Le parole per ferire]*(https://www.internazionale.it/opinione/tullio-de-mauro/2016/09/27/razzismo-parole-ferire) and [Wikitionary](https://it.wiktionary.org/wiki/Categoria:Parole_volgari-IT).
 
-
+All scripts are based on Python 3.5 / 3.6. CNN uses Keras 2.2.0 and can be run with Tensorflow 1.8.0 as backend.
