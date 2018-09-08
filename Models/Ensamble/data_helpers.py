@@ -33,8 +33,8 @@ def load_data_and_labels():
     """
     # Load train data from files
     samples, labels = [],[]
-    #with open('../../Data/haspeede_FB.ensamble-CNN.train.tsv','r', encoding='utf-8') as fi: # FB data
-    with open('../../Data/haspeede_TW.ensamble-CNN.train.tsv','r', encoding='utf-8') as fi: # TW data
+    with open('../../Data/haspeede_FB.ensamble-CNN.train.tsv','r', encoding='utf-8') as fi: # FB data
+    #with open('../../Data/haspeede_TW.ensamble-CNN.train.tsv','r', encoding='utf-8') as fi: # TW data
         for line in fi:
             data = line.strip().split('\t')
             # get sample
@@ -59,8 +59,8 @@ def load_data_and_labels():
 
     # Load test data,
     Xtest, Ytest = [], []
-    #with open('../../Data/haspeede_FB.ensamble-CNN.test.tsv','r', encoding='utf-8') as fi: # FB data
-    with open('../../Data/haspeede_TW.ensamble-CNN.test.tsv','r', encoding='utf-8') as fi: # TW data
+    with open('../../Data/haspeede_FB.ensamble-CNN.test.tsv','r', encoding='utf-8') as fi: # FB data
+    #with open('../../Data/haspeede_TW.ensamble-CNN.test.tsv','r', encoding='utf-8') as fi: # TW data
         for line in fi:
             data = line.strip().split('\t')
             # get sample

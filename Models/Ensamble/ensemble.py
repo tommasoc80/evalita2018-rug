@@ -196,6 +196,7 @@ if __name__ == '__main__':
     print('Outputting predictions...')
 
     outdir = '../../Results'
+    #fname = 'evalita_rug_ensemble_FB-FB.txt'
     #fname = 'evalita_rug_ensemble_TW-TW.txt'
     #fname = 'evalita_rug_ensemble_FB-TW.txt'
     fname = 'evalita_rug_ensemble_TW-FB.txt'

@@ -204,10 +204,16 @@ if __name__ == '__main__':
     """
     10-cv on training
     """
-    scores = cross_val_score(classifier, Xtrain, Ytrain, cv=10, scoring='f1_macro')
-    with open("cross-fold_FB-TW.txt", 'w', encoding='utf-8') as fo:
-            print(str(scores), file=fo)
+    #scores = cross_val_score(classifier, Xtrain, Ytrain, cv=10, scoring='f1_macro')
+    #scores = cross_val_score(classifier, Xtrain, Ytrain, cv=10, scoring='accuracy')
+    #with open("cross-fold_FB-TW.txt", 'w', encoding='utf-8') as fo:
+    #        print(str(scores), file=fo)
 
+    y_pred = cross_val_predict(classifier, Xtrain, Ytrain, cv=10)
+    labs = sorted(set(Ytrain + y_pred.tolist()))
+    print('Labels:', labs)
+    conf_mat = confusion_matrix(Ytrain, y_pred,labels=labs)
+    print(conf_mat)
 
     '''
     Actual training and predicting:
@@ -222,6 +228,7 @@ if __name__ == '__main__':
     '''
     Outputting in format required
     '''
+    """
 
     print('Outputting predictions...')
 
@@ -235,5 +242,6 @@ if __name__ == '__main__':
            #print(Xtest_raw[idx] + '\t' + Yguess[idx] + '\t' + 'XXX', file=fo) # binary task (coarse)
             #print(Xtest_raw[idx] + '\t' + 'XXX' + '\t' + Yguess[idx], file=fo) # multi task (fine)
 
+    """
     print('Done.')
 

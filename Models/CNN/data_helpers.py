@@ -3,12 +3,14 @@ import re
 import itertools
 from collections import Counter
 import pickle
-from nltk.corpus import stopwords
 
 """
 Original taken from https://github.com/dennybritz/cnn-text-classification-tf
+
 This script assumes that we have a fixed train and a fixed test set.
 The data loading method assumes that there are labels available for the fixed test set (for evaluation).
+
+
 """
 
 
@@ -17,16 +19,10 @@ def clean_str(string):
     Tokenization/string cleaning for all datasets except for SST.
     Original taken from https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
     """
+    #string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    string = re.sub(r'@\S+','User', string)
     string = re.sub(r'\|LBR\|', '', string)
-    string = re.sub(r",", " , ", string)
-    string = re.sub(r"!", " ! ", string)
-    string = re.sub(r"\(", " \( ", string)
-    string = re.sub(r"\)", " \) ", string)
-    string = re.sub(r"\s{2,}", " ", string)
-    string = re.sub(r"'", " ' ", string)
-    string = re.sub(r"[^A-Za-z0-9(),!?èéàòùì\'\`]", " ", string)
-    pattern = re.compile(r'\b(' + r'|'.join(stopwords.words('italian')) + r')\b\s*')
-    string = pattern.sub('', string)
+    string = re.sub(r'#', '', string)
     return string.strip().lower()
 
 
@@ -35,9 +31,10 @@ def load_data_and_labels():
     Loading both the train and the  test set.
     Adding the espresso dataset to train
     """
-    # Load train data from the FB file
+    # Load train data from files
     samples, labels = [],[]
-    with open('haspeede_FB-train.tsv','r', encoding='utf-8') as fi:
+    #with open('../../Data/haspeede_FB.ensamble-CNN.train.tsv','r', encoding='utf-8') as fi: # FB data
+    with open('../../Data/haspeede_TW.ensamble-CNN.train.tsv','r', encoding='utf-8') as fi: # TW data
         for line in fi:
             data = line.strip().split('\t')
             # get sample
@@ -50,35 +47,8 @@ def load_data_and_labels():
             else:
                 raise ValueError('Unknown label!')
 
-    # Load train data from the TW file
-    with open('haspeede_TW-train.tsv','r', encoding='utf-8') as fi:
-        for line in fi:
-            data = line.strip().split('\t')
-            # get sample
-            samples.append(data[1])
-            # get label
-            if data[2] == '1':
-                labels.append([0,1]) # label of positive sample
-            elif data[2] == '0':
-                labels.append([1,0]) # label of negative sample
-            else:
-                raise ValueError('Unknown label!')
-
-    # Load train data from the Espresso file
-    with open('espresso-ita-hate.p', 'rb') as fi:
-        espresso = pickle.load(fi)
-        fi.close()
-        for i in espresso[0]:
-            samples.append(i)
-        # get label
-        for i in espresso[1]:
-            if i == 1:
-                labels.append([0,1]) # label of positive sample
-            elif i == 0:
-                labels.append([1,0]) # label of negative sample
-            else:
-                raise ValueError('Unknown label!')
-
+    # Adding Espresso data
+    #samples, labels, idx_espresso = add_espresso_data(samples, labels)
 
     # Clean and split samples
     Xtrain = [clean_str(sample) for sample in samples]
@@ -89,7 +59,8 @@ def load_data_and_labels():
 
     # Load test data,
     Xtest, Ytest = [], []
-    with open('TEST_DATA','r', encoding='utf-8') as fi:
+    #with open('../../Data/haspeede_FB.ensamble-CNN.test.tsv','r', encoding='utf-8') as fi: # FB data
+    with open('../../Data/haspeede_TW.ensamble-CNN.test.tsv','r', encoding='utf-8') as fi: # TW data
         for line in fi:
             data = line.strip().split('\t')
             # get sample
@@ -106,36 +77,39 @@ def load_data_and_labels():
     Xtest = [s.split(" ") for s in Xtest] # each sample as list of words/strings
     Ytest = np.array(Ytest)
 
+#    return [Xtrain, Ytrain, Xtest, Ytest, len_train, idx_espresso]
     return [Xtrain, Ytrain, Xtest, Ytest, len_train]
 
+def add_espresso_data(Xorig, Yorig):
+    """
+    Loads the espresso dataset, randomly inserts them into orig_dataset
+    Order of samples in orig_dataset is preserved.
+    Returns: a) dataset (X, Y) extended with  espresso data, b) indices of espresso data samples in new dataset
+    (later on predictions for espresso items can be removed via these indices)
+    """
+    # load espresso data
+    f = open('../../Data/ger-espresso-offense-only.p', 'rb')
+    espresso = pickle.load(f)
+    f.close()
+    Xespresso = espresso[0]
+    Yespresso = [[0,1] for i in range(len(Xespresso))] # We use hate-only espresso data
 
+    # select 'marker items' in original dataset, espresso data will be put in front of each of these marker items.
+    markers = np.random.choice(Xorig, size=len(Xespresso), replace=False)
+    # Get indices of these marker items in orig_da, this is where to insert espresso items.
+    ind2insert = np.in1d(Xorig, markers).nonzero()[0]
+    # Insert espresso samples into Xorig and Yorig
+    Xorig = np.array(Xorig, dtype='object') # make Xorig and Yorig arrays first
+    Xnew = np.insert(Xorig, ind2insert, Xespresso)
+    Yorig = np.array(Yorig)
+    Ynew = np.insert(Yorig, ind2insert, Yespresso, axis=0)
+    # Get indices of marker items in Ynew
+    indmarkers = np.in1d(Xnew, markers).nonzero()[0]
+    # Espresso items are always exactly 1 before markers in the sample array, hence their indices are:
+    ind_espresso = [ind-1 for ind in indmarkers]
 
-# def load_data_and_labels_test():
-#     """
-#     Copy of load_data_and_labels to be applied to separate set of test data
-#     """
-#     # Load data from files
-#     samples, labels = [],[]
-#     with open('../../Data/germeval.ensemble.test.txt','r', encoding='utf-8') as fi:
-#         for line in fi:
-#             data = line.strip().split('\t')
-#             # get sample
-#             samples.append(data[0])
-#             # get label
-#             if data[1] == 'OFFENSE':
-#                 labels.append([0,1]) # label of positive sample
-#             elif data[1] == 'OTHER':
-#                 labels.append([1,0]) # label of negative sample
-#             else:
-#                 raise ValueError('Unknown label!')
-#
-#     # Clean and split samples
-#     x_text = [clean_str(sample) for sample in samples]
-#     x_text = [s.split(" ") for s in x_text] # each sample as list of words/strings
-#     # Turn labels to np array
-#     y = np.array(labels)
-#
-#     return [x_text, y]
+    return Xnew, Ynew, ind_espresso
+
 
 
 def pad_sentences(sentences, padding_word="<PAD/>"):
@@ -182,8 +156,9 @@ def load_data():
     Returns input vectors, labels, vocabulary, and inverse vocabulary.
     """
     # Load and preprocess data
+#    Xtrain, Ytrain, Xtest, Ytest, len_train, idx_espresso = load_data_and_labels()
     Xtrain, Ytrain, Xtest, Ytest, len_train = load_data_and_labels()
-    # sentences, labels = load_data_and_labels()
+    # sentences, labels, idx_espresso = load_data_and_labels()
     # Vocab needs to be build on the basis of the whole dataset, so we put train and test together! TRAIN, then TEST
     X = Xtrain + Xtest # X is list while Y is np.array
     Y = np.concatenate((Ytrain, Ytest), axis=0)
@@ -191,20 +166,8 @@ def load_data():
     sentences_padded = pad_sentences(X)
     vocabulary, vocabulary_inv = build_vocab(sentences_padded)
     X, Y = build_input_data(sentences_padded, Y, vocabulary)
-    return [X, Y, vocabulary, vocabulary_inv, len_train]
-
-
-# def load_data_test():
-#     """
-#     Copy of load_data to be applied to a separate dataset
-#     """
-#     # Load and preprocess data
-#     sentences, labels = load_data_and_labels_test()
-#     sentences_padded = pad_sentences(sentences)
-#     vocabulary, vocabulary_inv = build_vocab(sentences_padded)
-#     x, y = build_input_data(sentences_padded, labels, vocabulary)
-#     return [x, y, vocabulary, vocabulary_inv]
-
+#    return [X, Y, vocabulary, vocabulary_inv, len_train, idx_espresso]
+    return [X, Y, vocabulary, vocabulary_inv]
 
 def batch_iter(data, batch_size, num_epochs):
     """

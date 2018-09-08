@@ -42,7 +42,7 @@ hidden_dims = 50
 
 # Training parameters
 batch_size = 64
-num_epochs = 10
+num_epochs = 1
 
 # Prepossessing parameters
 sequence_length = 400
@@ -138,10 +138,9 @@ Y = y
 assert len(X) == len(Y), 'Difference in len between X and Y!'
 
 # define 5-fold cross validation test harness
-kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=None)
+kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=None)
 # cvpreds meant to store the prediction values provided for each sample in X via cross_val, created as dummy np.array with 0.0
 cvpreds = np.array([ 0.0 for i in range(len(X))])
-cv_classes = []
 # print('cvpreds shape:', cvpreds.shape)
 cvscores = []
 count = 1
@@ -173,19 +172,9 @@ for train, test in kfold.split(X, Y):
 
     # Get predictions for X[test] at this fold and store them in cvpreds
     preds = model.predict(X[test])
-    y_pred = (preds > 0.5).astype(np.int)
-    for entry in y_pred:
-        if entry[0] == 0:
-            cv_classes.append(0)
-        elif entry[0] == 1:
-            cv_classes.append(1)
-        else:
-            raise ValueError
-
     # preds is nd.array of shape (len(preds), 1), needs reshaping to (len(preds), ) to be compatible with cvpreds
     preds = preds.reshape(len(preds),)
     cvpreds[test] = preds
-
     # increase counter
     count += 1
 
@@ -196,12 +185,6 @@ print('Sanity checks on cvpreds:')
 # print('len(cvpreds):', len(cvpreds))
 print('Same length as Y ?', len(cvpreds) == len(Y))
 print('Any dummy 0.0 still in cvpreds?', 0.0 in cvpreds)
-
-#print("Confusion Matrix CNN cross fold")
-#y_gold = Y.tolist()
-#labs = sorted(set(y_gold + cv_classes))
-#print('Labels:', labs)
-#print(confusion_matrix(y_gold,cv_classes,labels=labs))
 
 Yguess = cvpreds
 # Removing predictions for the Espresso samples using idx_espresso
@@ -217,10 +200,10 @@ print(type(Ycnn))
 print(Ycnn.shape)
 
 # Pickling the predictions
-save_to = open('NEW-train-cnn-predict-FB-ensamble.p', 'wb') # FB cross predictions
+#save_to = open('NEW-train-cnn-predict-FB-ensamble.p', 'wb') # FB cross predictions
 #save_to = open('NEW-train-cnn-predict-TW-ensamble.p', 'wb')
-pickle.dump(Ycnn, save_to)
-save_to.close()
+#pickle.dump(Ycnn, save_to)
+#save_to.close()
 
 print('Done')
 
